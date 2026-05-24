@@ -1,8 +1,17 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
+
+const isMobile = () => /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth <= 768;
 
 export default function HeroVideo({ active }) {
   const sectionRef = useRef(null);
+  const videoRef = useRef(null);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+  const [videoSrc, setVideoSrc] = useState('');
+
+  useEffect(() => {
+    setVideoSrc(isMobile() ? './videos/IMG_8404_mobile.mp4' : './videos/IMG_8404.MP4');
+  }, []);
 
   useEffect(() => {
     if (!active) return;
@@ -16,18 +25,54 @@ export default function HeroVideo({ active }) {
     return () => ctx.revert();
   }, [active]);
 
+  useEffect(() => {
+    if (!active || !videoRef.current || !videoSrc) return;
+    const video = videoRef.current;
+    video.load();
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        setAutoplayBlocked(true);
+      });
+    }
+  }, [active, videoSrc]);
+
+  const handleManualPlay = () => {
+    if (videoRef.current) {
+      videoRef.current.play();
+      setAutoplayBlocked(false);
+    }
+  };
+
   return (
     <section className="hero-video" ref={sectionRef}>
-      <video
-        className="hero-video__media"
-        autoPlay
-        muted
-        loop
-        playsInline
-        poster="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=85"
-      >
-        <source src="./videos/IMG_8404.MP4" type="video/mp4" />
-      </video>
+      {videoSrc && (
+        <video
+          ref={videoRef}
+          className="hero-video__media"
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          poster="./images/ETSH1097.jpg"
+        >
+          <source src={videoSrc} type="video/mp4" />
+        </video>
+      )}
+
+      {autoplayBlocked && (
+        <button
+          className="hero-video__play-btn"
+          onClick={handleManualPlay}
+          aria-label="Play video"
+        >
+          <svg viewBox="0 0 24 24" fill="white" width="48" height="48">
+            <circle cx="12" cy="12" r="12" fill="rgba(255,255,255,0.2)" />
+            <polygon points="9,7 19,12 9,17" fill="white" />
+          </svg>
+        </button>
+      )}
+
       <div className="hero-video__veil" />
       <div className="hero-video__text">
         <p className="eyebrow">Wedding Invitation</p>
